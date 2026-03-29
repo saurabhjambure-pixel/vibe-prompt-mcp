@@ -1,7 +1,7 @@
 {
   "name": "vibe-prompt-mcp",
   "version": "1.0.2",
-  "description": "MCP server that optimizes vibe coding prompts",
+  "description": "Fix your vibe coding prompts before they reach the AI. Scores and rewrites across 4 dimensions — no API key, no server, just npx.",
   "main": "dist/index.js",
   "bin": {
     "vibe-prompt-mcp": "dist/index.js"
@@ -14,21 +14,30 @@
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
+    "prompt-engineering",
+    "prompt-optimization",
     "vibe-coding",
-    "prompt",
-    "replit",
-    "lovable"
+    "claude",
+    "cursor",
+    "ai-tools",
+    "typescript"
   ],
-  "author": "SJ",
+  "author": "Saurabh Jambure",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/saurabhjambure-pixel/vibe-prompt-mcp.git"
+  },
+  "homepage": "https://github.com/saurabhjambure-pixel/vibe-prompt-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",
-    "@types/express": "^5.0.6",
     "express": "^5.2.1",
     "tiktoken": "^1.0.22",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^25.5.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
