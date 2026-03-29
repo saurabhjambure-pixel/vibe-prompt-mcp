@@ -1,3 +1,7 @@
 src/
 *.sh
 .env
+.claude/
+.DS_Store
+**/.DS_Store
+*.tgz
