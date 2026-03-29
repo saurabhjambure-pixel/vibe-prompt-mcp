@@ -7,7 +7,7 @@
 > **Every vague prompt costs you 2–3 follow-up messages.**
 > This MCP fixes your prompt before it reaches the AI — so you get the right output on the first try.
 
-`vibe-prompt-mcp` scores your prompt across 4 quality dimensions, strips the noise, rewrites the vague parts, and fills in what's missing. The AI gets a precise instruction. You get fewer iterations.
+`vibe-prompt-mcp` scores your prompt across 4 quality dimensions, rewrites the weak parts, and fills in what's missing. The AI gets a precise instruction. You get fewer iterations.
 
 No API key. No account. No server to run. Works inside Claude Code, Cursor, Windsurf, Zed, and any stdio MCP client.
 
@@ -15,88 +15,92 @@ No API key. No account. No server to run. Works inside Claude Code, Cursor, Wind
 
 ## The problem it solves
 
-You type this:
-```
-can you please improve the login page, it looks bad and i want it to feel more modern
-```
+You send a prompt. The AI produces something close but not quite right. You clarify. It tries again. You say "also add loading states." Another round. "Make it responsive." One more.
 
-The AI produces something. It's not quite right. You clarify. It tries again. You say "also add loading states." It adds them. You say "make it responsive." Another round.
+**Three iterations to get what you could have specified upfront.**
 
-**Three iterations to get what you could've specified upfront.**
-
-`vibe-prompt-mcp` catches this before it happens. It sees `improve` (vague), `modern` (subjective), no acceptance criteria, no style stack — and fixes all of it automatically.
+`vibe-prompt-mcp` catches the gaps before the prompt is sent — vague verbs, subjective language, missing acceptance criteria, absent style stack — and fixes them automatically. The AI gets one clear instruction instead of a guessing game.
 
 ---
 
 ## See it in action
 
-### Before / After — vague UI prompt
+### Example 1 — vague UI prompt
 
+**Before:**
 ```
-INPUT
 can you please improve the login page, it looks bad and i want it to feel more modern
-Score: 76/100 — 5 issues found
 ```
+*Score: 76/100 — 5 issues detected*
 
+**After `optimize_prompt`:**
 ```
-OUTPUT (after optimize_prompt)
 please redesign the login page, it looks bad and i want it to use
 Inter font, neutral color palette, 8px border radius, consistent
 16px grid spacing. Done when: the page renders correctly on mobile
 and desktop with no console errors. Use Tailwind CSS and shadcn/ui.
-
-Score: 78/100  ✦ E1 · C1 · C4 · S1 · S2 applied
 ```
+*Score: 78/100 — filler stripped, vague terms replaced, missing specs appended*
 
-What changed:
-- `improve` → `redesign` (C1 — vague verb)
-- `feel more modern` → `use Inter font, neutral color palette...` (C4 — subjective word)
-- Acceptance criteria appended (S1 — was missing)
-- Style stack appended (S2 — was missing)
-- `can you please` stripped (E1 — filler)
+### Example 2 — feature request with missing specs
 
-### Before / After — feature request with missing specs
-
+**Before:**
 ```
-INPUT
 Add a notifications bell icon to the navbar that shows unread count
 and a dropdown list of recent notifications with mark-as-read functionality
-Score: 79/100 — 3 issues found
 ```
+*Score: 79/100 — 3 issues detected*
 
+**After `optimize_prompt`:**
 ```
-OUTPUT (after optimize_prompt)
 Add a notifications bell icon to the navbar that shows unread count
 and a dropdown list of recent notifications with mark-as-read
 functionality. Done when: the list renders correctly on mobile and
 desktop with no console errors. Use Tailwind CSS and shadcn/ui.
 Include loading, error, and empty states.
-
-Score: 84/100  ✦ S1 · S2 · S3 applied
 ```
+*Score: 84/100 — acceptance criteria, style stack, and state requirements added*
 
-Without this fix, the AI would've built it — then you'd have asked about loading states. Then responsive. Then the empty state. **Three follow-ups eliminated.**
+Without this, you'd have built the feature — then asked about loading states, then responsive layout, then the empty state. **Three follow-ups eliminated upfront.**
+
+---
+
+## How it works
+
+`vibe-prompt-mcp` runs **entirely on your machine** as a local Node.js process. It uses no AI, makes no API calls, and sends nothing to any external service.
+
+Under the hood it's a rule engine — 18 rules across 4 dimensions — that analyzes the structure and language of your prompt, detects patterns that consistently cause poor AI output, and applies targeted fixes. Think of it as a linter for prompts.
+
+**What this means for you:**
+
+- **Zero AI cost for the optimization itself.** The only tokens spent are ~130 for the tool call overhead (your message + Claude routing the request + the response).
+- **Net savings come from avoiding re-iterations.** Each back-and-forth cycle with the AI costs 500–1,000+ tokens. One optimized prompt that gets it right on the first try pays for itself immediately.
+- **Runs offline.** No network call is made during optimization.
+
+This is the core difference from AI-based prompt improvers — those spend tokens to save tokens. This one doesn't.
 
 ---
 
 ## Quick start
 
-**Step 1 — Add to your AI tool** (pick one below)
+**Step 1 — Add to your AI tool** (pick your platform below)
 
 **Step 2 — Use it**
 
-Ask your AI:
+Ask your AI in plain language:
 ```
 optimize this prompt: [your prompt here]
 ```
-or
 ```
 score this prompt: [your prompt here]
 ```
+```
+optimize in verbose mode: [your prompt here]
+```
 
-**Step 3 — Send the optimized version**
+**Step 3 — Send the result**
 
-Copy the rewritten prompt from the output and use it as your actual instruction. Done.
+Copy the rewritten prompt and use it as your actual instruction.
 
 ---
 
@@ -104,7 +108,7 @@ Copy the rewritten prompt from the output and use it as your actual instruction.
 
 ### Claude Code
 
-**Option A — project-level** (recommended, shared with your team):
+**Option A — project-level** (recommended, checked into source control and shared with your team):
 
 Create `.mcp.json` at your project root:
 
@@ -120,13 +124,13 @@ Create `.mcp.json` at your project root:
 }
 ```
 
-**Option B — global** (available in every project):
+**Option B — global** (available in every project on your machine):
 
 ```bash
 claude mcp add vibe-prompt-mcp -s user -- npx -y vibe-prompt-mcp
 ```
 
-Then restart Claude Code. Type `/mcp` to confirm `vibe-prompt-mcp` appears.
+Restart Claude Code, then type `/mcp` to confirm `vibe-prompt-mcp` appears with both tools listed.
 
 ### Cursor
 
@@ -184,61 +188,47 @@ Add to `~/.gemini/antigravity/mcp_config.json`:
 
 ### Lovable / Replit / Codex (HTTP)
 
-These platforms require a deployed HTTP endpoint. The package ships an Express server:
+These platforms require a deployed remote endpoint. The package ships an HTTP server:
 
 ```bash
 node node_modules/vibe-prompt-mcp/dist/http.js
-# Starts on port 3000 (or $PORT) — endpoint: POST /mcp
+# Express on port 3000 (or $PORT) — MCP endpoint: POST /mcp
 ```
 
-Deploy to Railway or Render, then point the platform's MCP URL to `https://YOUR_HOST/mcp`.
+Deploy to Railway or Render and point the platform's MCP URL to `https://YOUR_HOST/mcp`.
 
 ---
 
-## How to use the tools
+## Scoring dimensions
 
-Once installed, use natural language inside your AI tool:
+Each dimension is worth 25 points. Total score: **0–100**.
 
-| What you want | What to type |
+| Dimension | What it evaluates |
 |---|---|
-| Fix a prompt before sending | `optimize this prompt: [prompt]` |
-| See what's wrong without rewriting | `score this prompt: [prompt]` |
-| Get full change log | `optimize in verbose mode: [prompt]` |
+| **Clarity** | Vague action verbs, subjective descriptors, contradictory requirements, pronoun ambiguity |
+| **Specificity** | Acceptance criteria, style framework, error/loading/empty states, data shape definitions |
+| **Completeness** | Scope boundaries, responsive and accessibility constraints, tech stack, context references |
+| **Efficiency** | Filler language, meta-commentary, hedge phrases, duplicate context |
 
-The tools are named `optimize_prompt` and `score_prompt` — your AI calls them automatically when you use the phrases above.
-
----
-
-## How scoring works
-
-Each of the 4 dimensions is worth 25 points. Total score: **0–100**.
-
-| Dimension | What gets flagged or auto-fixed |
-|---|---|
-| **Clarity** | Vague verbs (`improve`, `fix`, `enhance`, `update`) → concrete replacements; subjective words (`modern`, `clean`, `professional`, `sleek`) → design specs; pronoun ambiguity; contradictions (`simple` vs `feature-rich`) |
-| **Specificity** | Missing acceptance criteria; no style framework; absent error/loading/empty states; undefined field types on forms |
-| **Completeness** | 3+ actions in one prompt (scope creep); missing responsive/a11y constraints; no tech stack on short prompts; undefined references to "existing" components |
-| **Efficiency** | Filler openers (`can you please`, `I want you to`); meta-commentary (`as an AI`, `feel free to`); hedge phrases (`if possible`, `maybe`, `sort of`, `try to`) |
-
-**Severity levels:**
-- 🔴 Critical — will likely cause the AI to produce the wrong output
-- ⚠ Warn — reduces output quality or causes follow-up iterations
-- ✦ Info — minor noise that adds no value
+**Severity:**
+- 🔴 Critical — high likelihood of wrong output
+- ⚠ Warn — reduces quality or causes follow-up iterations
+- ✦ Info — noise with no instructional value
 
 ---
 
-## Running locally (no npx)
+## Running locally from source
 
 ```bash
 git clone https://github.com/saurabhjambure-pixel/vibe-prompt-mcp
 cd vibe-prompt-mcp
 npm install
-npm run build        # compiles TypeScript → dist/
-npm run dev          # stdio server with hot reload
+npm run build        # TypeScript → dist/
+npm run dev          # stdio server, hot reload
 npm run start:http   # HTTP server on port 3000
 ```
 
-Point your MCP config at `dist/index.js` instead of using `npx`:
+To use your local build instead of npx:
 
 ```json
 {
@@ -253,32 +243,9 @@ Point your MCP config at `dist/index.js` instead of using `npx`:
 
 ---
 
-## Project structure
-
-```
-src/
-├── index.ts              # Stdio MCP entry point
-├── http.ts               # HTTP/Express server (POST /mcp)
-├── tools/
-│   ├── optimize.ts       # optimize_prompt — rewrite + score delta
-│   └── score.ts          # score_prompt — breakdown + issue list
-└── lib/
-    ├── rewriter.ts        # Orchestrates all 18 rule passes
-    ├── scorer.ts          # Penalty-based scoring engine (0–100)
-    ├── tokenizer.ts       # Token counting via tiktoken (cl100k_base)
-    ├── types.ts           # RuleResult, ScoreBreakdown, Severity, Dimension
-    └── rules/
-        ├── clarity.ts     # C1–C4
-        ├── specificity.ts # S1–S4
-        ├── completeness.ts# K1–K4
-        └── efficiency.ts  # E1–E6
-```
-
----
-
 ## Contributing
 
-Issues and PRs welcome. If you have a rule idea — a pattern you keep seeing in bad prompts — open an issue describing it.
+Issues and PRs welcome. If you have a rule idea — a pattern you keep seeing that produces poor AI output — open an issue.
 
 ---
 
