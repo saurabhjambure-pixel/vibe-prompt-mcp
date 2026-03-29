@@ -1,67 +1,112 @@
 # vibe-prompt-mcp
 
 [![npm version](https://img.shields.io/npm/v/vibe-prompt-mcp)](https://www.npmjs.com/package/vibe-prompt-mcp)
-[![license](https://img.shields.io/npm/l/vibe-prompt-mcp)](LICENSE)
 [![npm downloads](https://img.shields.io/npm/dm/vibe-prompt-mcp)](https://www.npmjs.com/package/vibe-prompt-mcp)
+[![license](https://img.shields.io/npm/l/vibe-prompt-mcp)](LICENSE)
 
-MCP server that scores and optimizes vibe coding prompts. It analyzes your prompts across 4 dimensions and rewrites them to be clearer, more specific, and more token-efficient — exposing two tools: `optimize_prompt` and `score_prompt`.
+**Stop sending vague prompts. Get better AI output on the first try.**
 
----
+`vibe-prompt-mcp` is an MCP server that intercepts your prompt before it hits the AI — scores it across 4 quality dimensions, strips the noise, rewrites the vague parts, and fills in what's missing. Higher score = fewer iterations = better code.
 
-## Tools
-
-| Tool | Description | Parameters |
-|---|---|---|
-| `optimize_prompt` | Rewrites a prompt for clarity and token efficiency | `raw_prompt` (string), `mode` ("compact" \| "verbose", default "compact") |
-| `score_prompt` | Scores a prompt without rewriting it | `raw_prompt` (string) |
+Works inside Claude Code, Cursor, Windsurf, Zed, and any stdio MCP client. No API key. No account. Just `npx`.
 
 ---
 
-## Scoring Dimensions
+## See it in action
 
-Each dimension is scored 0–25; total score is 0–100.
+### Example 1 — vague UI prompt
 
-| Dimension | What It Checks |
-|---|---|
-| **Clarity** | Vague action verbs, pronoun ambiguity, contradictory descriptors, subjective language |
-| **Specificity** | Missing acceptance criteria, absent style stack, no error/loading/empty states, undefined data shapes |
-| **Completeness** | Scope creep, missing constraints (mobile, a11y), no tech stack on short prompts, orphaned references |
-| **Efficiency** | Filler openers, meta-commentary, hedge phrases, over-structured formatting, duplicate context |
+**Before:**
+```
+can you please improve the login page, it looks bad and i want it to feel more modern
+```
+
+**After `optimize_prompt`:**
+```
+✦ Score 76 → 78
+
+Changes:
+  ✦ [E1] Stripped filler opener
+  ⚠ [C1] Replaced vague verb "improve" → "redesign"
+  ⚠ [C4] Replaced subjective "modern" → concrete design spec
+  🔴 [S1] Appended acceptance criteria (was missing)
+  ⚠ [S2] Appended style stack: Tailwind CSS + shadcn/ui
+
+please redesign the login page, it looks bad and i want it to
+use Inter font, neutral color palette, 8px border radius, consistent
+16px grid spacing. Done when: the page renders correctly on mobile
+and desktop with no console errors. Use Tailwind CSS and shadcn/ui.
+```
+
+### Example 2 — feature request with missing specs
+
+**Before:**
+```
+Add a notifications bell icon to the navbar that shows unread count
+and a dropdown list of recent notifications with mark-as-read functionality
+```
+
+**After `optimize_prompt`:**
+```
+✦ Score 79 → 84
+
+Changes:
+  🔴 [S1] Appended acceptance criteria
+  ⚠ [S2] Appended style stack: Tailwind CSS + shadcn/ui
+  ⚠ [S3] Appended loading, error, and empty state requirements
+
+Add a notifications bell icon to the navbar that shows unread count
+and a dropdown list of recent notifications with mark-as-read
+functionality. Done when: the list renders correctly on mobile and
+desktop with no console errors. Use Tailwind CSS and shadcn/ui.
+Include loading, error, and empty states.
+```
+
+The AI now has explicit success criteria, a style framework, and state requirements — things that would've needed 2–3 follow-up prompts to surface otherwise.
 
 ---
 
-## Installation & Usage
-
-### Local / stdio (Claude Code, Cursor, Antigravity, etc.)
-
-No install required — just run via `npx`:
+## Install
 
 ```bash
 npx vibe-prompt-mcp
 ```
 
-Or install globally:
-
-```bash
-npm install -g vibe-prompt-mcp
-vibe-prompt-mcp
-```
-
-### HTTP server (Codex, Lovable, Replit, and any HTTP-based MCP client)
-
-```bash
-npm install vibe-prompt-mcp
-node node_modules/vibe-prompt-mcp/dist/http.js
-# Starts Express on port 3000 (or $PORT), endpoint: POST /mcp
-```
+No install required. Runs via npx, starts instantly, zero configuration.
 
 ---
 
-## Platform Configuration
+## Tools
+
+| Tool | What it does | Parameters |
+|---|---|---|
+| `optimize_prompt` | Rewrites the prompt — fixes vague terms, appends missing specs, strips filler | `raw_prompt` (string), `mode` ("compact" \| "verbose", default "compact") |
+| `score_prompt` | Scores without rewriting — shows exactly what's wrong and why | `raw_prompt` (string) |
+
+### Scoring
+
+Each dimension is worth 25 points. Total: 0–100.
+
+| Dimension | What gets flagged or fixed |
+|---|---|
+| **Clarity** | Vague verbs (`improve`, `fix`, `enhance`) → concrete replacements; subjective words (`modern`, `clean`, `professional`) → design specs; pronoun ambiguity; contradictions |
+| **Specificity** | Missing acceptance criteria; no style stack; absent error/loading/empty states; undefined field types on forms/CRUD |
+| **Completeness** | Scope creep (3+ actions in one prompt); missing responsive/a11y constraints; no tech stack on short prompts; orphaned references |
+| **Efficiency** | Filler openers (`can you`, `please`, `I want you to`); meta-commentary (`as an AI`, `feel free to`); hedge phrases (`if possible`, `maybe`, `sort of`, `try to`) |
+
+### On token savings
+
+Efficiency rules strip filler and hedges that the AI ignores anyway. For short prompts, specificity rules add more tokens (appending acceptance criteria, style stacks, state requirements) than efficiency removes — so the net token count often increases. That's the right tradeoff: a longer, precise prompt consistently outperforms a shorter, vague one.
+
+For verbose prompts packed with meta-commentary and hedges, you'll see meaningful token savings alongside the score improvement.
+
+---
+
+## Platform setup
 
 ### Claude Code
 
-Create `.mcp.json` at your project root:
+Add to `.mcp.json` at your project root:
 
 ```json
 {
@@ -77,34 +122,18 @@ Create `.mcp.json` at your project root:
 
 Or via CLI:
 ```bash
-claude mcp add vibe-prompt -s project -- npx -y vibe-prompt-mcp
+claude mcp add vibe-prompt-mcp -s project -- npx -y vibe-prompt-mcp
 ```
 
-### OpenAI Codex
+### Cursor
 
-Add to `~/.codex/config.toml`:
+Settings → MCP → Add new server:
+- **Command**: `npx`
+- **Args**: `-y vibe-prompt-mcp`
 
-```toml
-[mcp_servers.vibe-prompt-mcp]
-url = "https://YOUR_DEPLOYED_URL/mcp"
-enabled = true
-```
+### Windsurf
 
-### Lovable
-
-Settings → Connectors → Personal connectors → New MCP server:
-- **Server URL**: `https://YOUR_DEPLOYED_URL/mcp`
-- **Authentication**: None
-
-### Replit
-
-Integrations pane → MCP Servers → Add MCP server:
-- **Server URL**: `https://YOUR_DEPLOYED_URL/mcp`
-- Click "Test & Save"
-
-### Antigravity
-
-Edit `~/.gemini/antigravity/mcp_config.json`:
+Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ```json
 {
@@ -117,43 +146,80 @@ Edit `~/.gemini/antigravity/mcp_config.json`:
 }
 ```
 
+### Zed
+
+Add to `.zed/settings.json`:
+
+```json
+{
+  "context_servers": {
+    "vibe-prompt-mcp": {
+      "command": {
+        "path": "npx",
+        "args": ["-y", "vibe-prompt-mcp"]
+      }
+    }
+  }
+}
+```
+
+### Antigravity
+
+Add to `~/.gemini/antigravity/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "vibe-prompt-mcp": {
+      "command": "npx",
+      "args": ["-y", "vibe-prompt-mcp"]
+    }
+  }
+}
+```
+
+### HTTP server (self-hosted)
+
+The package includes an HTTP server for platforms that require a remote endpoint (Lovable, Replit, Codex):
+
+```bash
+node node_modules/vibe-prompt-mcp/dist/http.js
+# Express on port 3000 (or $PORT) — MCP endpoint: POST /mcp
+```
+
+Deploy to Railway, Render, or any Node.js host and point the platform's MCP URL to `https://YOUR_HOST/mcp`.
+
 ---
 
 ## Development
 
 ```bash
-# Install dependencies
+git clone https://github.com/saurabhjambure-pixel/vibe-prompt-mcp
 npm install
-
-# Build TypeScript → dist/
-npm run build
-
-# Run stdio server with hot reload (dev mode)
-npm run dev
-
-# Run HTTP server (dev mode, port 3000)
-npm run start:http
+npm run build        # tsc → dist/
+npm run dev          # stdio server with hot reload
+npm run start:http   # HTTP server on port 3000 (dev)
 ```
 
 ### Project structure
 
 ```
 src/
-├── index.ts          # Stdio MCP entry point
-├── http.ts           # HTTP/Express MCP server (POST /mcp)
+├── index.ts              # Stdio MCP entry point
+├── http.ts               # HTTP/Express server (POST /mcp)
 ├── tools/
-│   ├── optimize.ts   # optimize_prompt handler
-│   └── score.ts      # score_prompt handler
+│   ├── optimize.ts       # optimize_prompt — rewrite + score delta
+│   └── score.ts          # score_prompt — breakdown + issue list
 └── lib/
-    ├── scorer.ts      # Aggregates rule scores
-    ├── rewriter.ts    # Applies rule fixes
-    ├── tokenizer.ts   # Token counting (tiktoken)
-    ├── types.ts       # Shared types
+    ├── rewriter.ts        # Orchestrates all rule passes
+    ├── scorer.ts          # Penalty-based scoring (0–100)
+    ├── tokenizer.ts       # Token counting via tiktoken (cl100k_base)
+    ├── types.ts           # RuleResult, ScoreBreakdown, Severity, Dimension
     └── rules/
-        ├── clarity.ts
-        ├── specificity.ts
-        ├── completeness.ts
-        └── efficiency.ts
+        ├── clarity.ts     # C1–C4
+        ├── specificity.ts # S1–S4
+        ├── completeness.ts# K1–K4
+        └── efficiency.ts  # E1–E6
 ```
 
 ---
