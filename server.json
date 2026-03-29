@@ -1,0 +1,12 @@
+{
+  "name": "io.github.saurabhjambure-pixel/vibe-prompt-mcp",
+  "description": "MCP server that scores and optimizes vibe coding prompts",
+  "repository": "https://github.com/saurabhjambure-pixel/vibe-prompt-mcp",
+  "packages": [
+    {
+      "registry": "npm",
+      "name": "vibe-prompt-mcp",
+      "version": "1.0.2"
+    }
+  ]
+}

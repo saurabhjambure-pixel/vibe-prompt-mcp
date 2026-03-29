@@ -1,0 +1,11 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+    required: []
+  commandFunction: |-
+    (_config) => ({
+      command: "npx",
+      args: ["-y", "vibe-prompt-mcp"]
+    })
