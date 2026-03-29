@@ -1,0 +1,37 @@
+{
+  "name": "vibe-prompt-mcp",
+  "version": "1.0.0",
+  "description": "MCP server that optimizes vibe coding prompts",
+  "main": "dist/index.js",
+  "bin": {
+    "vibe-prompt-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "start:http": "tsx src/http.ts"
+  },
+  "keywords": [
+    "mcp",
+    "vibe-coding",
+    "prompt",
+    "replit",
+    "lovable"
+  ],
+  "author": "SJ",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "@types/express": "^5.0.6",
+    "express": "^5.2.1",
+    "tiktoken": "^1.0.22",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  },
+  "type": "module"
+}
