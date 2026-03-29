@@ -2,6 +2,17 @@ import { RuleResult } from "../types.js";
 
 const VAGUE_VERBS = ["improve", "fix", "make better", "clean up", "enhance", "update", "do something with", "handle"];
 
+const VAGUE_VERB_MAP: Record<string, string> = {
+  "improve":           "redesign",
+  "fix":               "debug and fix",
+  "make better":       "improve",
+  "clean up":          "refactor",
+  "enhance":           "extend",
+  "update":            "modernize",
+  "do something with": "refactor",
+  "handle":            "implement",
+};
+
 const SUBJECTIVE_MAP: Record<string, string> = {
   "modern":       "Inter font, neutral color palette, 8px border radius, consistent 16px grid spacing",
   "professional": "clean typography, structured layout, muted color palette",
@@ -17,12 +28,10 @@ export function applyClarityRules(prompt: string): { text: string; results: Rule
   let text = prompt;
   const results: RuleResult[] = [];
 
-  // C1: Vague action verbs — flag only, cannot safely infer replacement
+  // C1: Vague action verbs — swap with a concrete verb from VAGUE_VERB_MAP
   const vagueMatch = VAGUE_VERBS.find(v => new RegExp(`\\b${v}\\b`, "i").test(text));
   if (vagueMatch) {
-    const isUI = /\b(page|dashboard|homepage|screen|modal|form|table|list|card|nav)\b/i.exec(text);
-    const subject = isUI ? isUI[0] : "component";
-    text = text.replace(new RegExp(`\\b${vagueMatch}\\b`, "i"), `redesign the ${subject} to`);
+    text = text.replace(new RegExp(`\\b${vagueMatch}\\b`, "i"), VAGUE_VERB_MAP[vagueMatch]);
     results.push({ id: "C1", dimension: "clarity", severity: "warn",
       message: `Replaced vague verb "${vagueMatch}" with specific action`, fix_applied: true });
   }
@@ -47,12 +56,21 @@ export function applyClarityRules(prompt: string): { text: string; results: Rule
     }
   }
 
-  // C4: Subjective descriptors — actively replace with concrete spec
+  // C4: Subjective descriptors — context-aware replacement with concrete spec
   const subjectiveMatch = Object.keys(SUBJECTIVE_MAP).find(s =>
     new RegExp(`\\b${s}\\b`, "i").test(text)
   );
   if (subjectiveMatch) {
-    text = text.replace(new RegExp(`\\b${subjectiveMatch}\\b`, "i"), SUBJECTIVE_MAP[subjectiveMatch]);
+    const spec = SUBJECTIVE_MAP[subjectiveMatch];
+    const phrasePattern = new RegExp(
+      `\\b(feel|look|be|seem|appear)\\s+(?:more|really|very)?\\s*${subjectiveMatch}\\b`,
+      "i"
+    );
+    if (phrasePattern.test(text)) {
+      text = text.replace(phrasePattern, `use ${spec}`);
+    } else {
+      text = text.replace(new RegExp(`\\b${subjectiveMatch}\\b`, "i"), spec);
+    }
     results.push({ id: "C4", dimension: "clarity", severity: "warn",
       message: `Replaced subjective "${subjectiveMatch}" with concrete spec`, fix_applied: true });
   }

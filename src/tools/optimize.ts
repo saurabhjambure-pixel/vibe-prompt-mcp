@@ -1,11 +1,21 @@
 import { rewrite } from "../lib/rewriter.js";
 import { computeScore } from "../lib/scorer.js";
+import { applyClarityRules } from "../lib/rules/clarity.js";
+import { applySpecificityRules } from "../lib/rules/specificity.js";
+import { applyCompletenessRules } from "../lib/rules/completeness.js";
+import { applyEfficiencyRules } from "../lib/rules/efficiency.js";
 import { countTokens, estimateCostSaved } from "../lib/tokenizer.js";
 import { RuleResult } from "../lib/types.js";
 
 export function optimizePrompt(rawPrompt: string, mode: "compact" | "verbose" = "compact") {
   const { optimized, rules } = rewrite(rawPrompt);
-  const scoresBefore = computeScore([]);
+  const rulesBeforeOptimization = [
+    ...applyEfficiencyRules(rawPrompt).results,
+    ...applyClarityRules(rawPrompt).results,
+    ...applySpecificityRules(rawPrompt).results,
+    ...applyCompletenessRules(rawPrompt).results,
+  ];
+  const scoresBefore = computeScore(rulesBeforeOptimization);
   const scoresAfter = computeScore(rules);
   const tokensBefore = countTokens(rawPrompt);
   const tokensAfter = countTokens(optimized);
