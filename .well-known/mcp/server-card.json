@@ -1,0 +1,41 @@
+{
+  "name": "vibe-prompt-mcp",
+  "version": "1.1.0",
+  "description": "Fix your vibe coding prompts before they reach the AI. Scores and rewrites across 4 dimensions — no API key, no server, just npx. Now with codebase-aware context injection for design, database, API, auth, testing, and state management.",
+  "homepage": "https://github.com/saurabhjambure-pixel/vibe-prompt-mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/saurabhjambure-pixel/vibe-prompt-mcp.git"
+  },
+  "author": {
+    "name": "Saurabh Jambure",
+    "url": "https://github.com/saurabhjambure-pixel"
+  },
+  "license": "MIT",
+  "installation": {
+    "type": "npm",
+    "package": "vibe-prompt-mcp",
+    "command": "npx vibe-prompt-mcp"
+  },
+  "tools": [
+    {
+      "name": "optimize_prompt",
+      "description": "Optimize a prompt across clarity, specificity, completeness, and efficiency dimensions. Optionally discovers and injects project-specific context when projectRoot is provided."
+    },
+    {
+      "name": "score_prompt",
+      "description": "Score a prompt across 4 dimensions with detailed breakdown and messaging."
+    }
+  ],
+  "transports": [
+    {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["vibe-prompt-mcp"]
+    },
+    {
+      "type": "http",
+      "url": "http://localhost:3000"
+    }
+  ]
+}
