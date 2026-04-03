@@ -9,13 +9,14 @@ const app = express();
 app.use(express.json());
 
 app.post("/mcp", async (req, res) => {
-  const server = new McpServer({ name: "vibe-prompt-mcp", version: "1.0.0" });
+  const server = new McpServer({ name: "vibe-prompt-mcp", version: "1.1.0" });
 
   server.tool("optimize_prompt",
-    { raw_prompt: z.string(), mode: z.enum(["compact", "verbose"]).default("compact") },
-    async ({ raw_prompt, mode }) => ({
-      content: [{ type: "text", text: optimizePrompt(raw_prompt, mode).content }]
-    })
+    { raw_prompt: z.string(), mode: z.enum(["compact", "verbose"]).default("compact"), projectRoot: z.string().optional() },
+    async ({ raw_prompt, mode, projectRoot }) => {
+      const result = await optimizePrompt(raw_prompt, mode, projectRoot);
+      return { content: [{ type: "text", text: result.content }] };
+    }
   );
 
   server.tool("score_prompt",

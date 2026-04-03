@@ -4,13 +4,14 @@ import { z } from "zod";
 import { optimizePrompt } from "./tools/optimize.js";
 import { scorePrompt } from "./tools/score.js";
 
-const server = new McpServer({ name: "vibe-prompt-mcp", version: "1.0.0" });
+const server = new McpServer({ name: "vibe-prompt-mcp", version: "1.1.0" });
 
 server.tool("optimize_prompt",
-  { raw_prompt: z.string(), mode: z.enum(["compact", "verbose"]).default("compact") },
-  async ({ raw_prompt, mode }) => ({
-    content: [{ type: "text", text: optimizePrompt(raw_prompt, mode).content }]
-  })
+  { raw_prompt: z.string(), mode: z.enum(["compact", "verbose"]).default("compact"), projectRoot: z.string().optional() },
+  async ({ raw_prompt, mode, projectRoot }) => {
+    const result = await optimizePrompt(raw_prompt, mode, projectRoot);
+    return { content: [{ type: "text", text: result.content }] };
+  }
 );
 
 server.tool("score_prompt",
@@ -22,9 +23,10 @@ server.tool("score_prompt",
 
 server.prompt("vibe-optimize",
   { raw_prompt: z.string() },
-  ({ raw_prompt }) => ({
-    messages: [{ role: "user", content: { type: "text", text: optimizePrompt(raw_prompt, "verbose").content } }]
-  })
+  async ({ raw_prompt }) => {
+    const result = await optimizePrompt(raw_prompt, "verbose");
+    return { messages: [{ role: "user", content: { type: "text", text: result.content } }] };
+  }
 );
 
 async function main() {
